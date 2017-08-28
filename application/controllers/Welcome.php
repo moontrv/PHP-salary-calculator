@@ -1,7 +1,10 @@
 <?php
 
 defined('BASEPATH') OR exit('No direct script access allowed');
-$test = "hello";
+
+require 'vendor/autoload.php';     
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Welcome extends CI_Controller {
 
@@ -20,14 +23,11 @@ class Welcome extends CI_Controller {
      * map to /index.php/welcome/<method_name>
      * @see https://codeigniter.com/user_guide/general/urls.html
      */
+    
     public function __construct() {
         parent::__construct();
         $this->load->helper(array('form', 'url'));
-        $this->load->library('form_validation');
-        $config['upload_path'] = './uploads/';
-        $config['allowed_types'] = 'xlsx|csv|xls'; //xlsx|csv|xls
-        $config['max_size'] = 5000;
-        $this->load->library('upload', $config);
+        $this->load->library('form_validation');        
     }
 
     public function index() {
@@ -38,6 +38,10 @@ class Welcome extends CI_Controller {
 
     public function do_upload()
     {
+        $config['upload_path'] = './uploads/';
+        $config['allowed_types'] = 'xlsx|csv|xls'; //xlsx|csv|xls
+        $config['max_size'] = 5000;
+        $this->load->library('upload', $config);
         if ( ! $this->upload->do_upload('userfile'))
         {
             $error = array('error' => $this->upload->display_errors());
@@ -53,32 +57,36 @@ class Welcome extends CI_Controller {
     }
     
     public function readExcel($data) {
-        $this->load->library('excel_reader');
         //$data = json_decode(file_get_contents('php://input'), true);
         $data = json_decode(json_encode($data), true);
-        
-        $config['upload_path'] = './uploads/';
-        $config['allowed_types'] = 'xlsx|csv|xls'; //xlsx|csv|xls
-        $config['max_size'] = 5000;
-        $this->load->library('upload', $config);
+        $this->load->library('excel_reader');               
         // Read the spreadsheet via a relative path to the document
         // for example $this->excel_reader->read('./uploads/file.xls');
-        //$this->excel_reader->read('./uploads/Salary.xlsx');
+        $this->excel_reader->read('./uploads/'.$data);
 
-        // Get the contents of the first worksheet
-        /*$worksheet = $this->excel_reader->sheets[0];
+        $worksheet = $this->excel_reader->sheets[0];
 
         $numRows = $worksheet['numRows']; // ex: 14
         $numCols = $worksheet['numCols']; // ex: 4
         $cells = $worksheet['cells']; // the 1st row are usually the field's name
         foreach ($cells as $cell) {
-            //var_dump($cell);
-        }*/
+            var_dump($cell);
+        }
 
-        $this->output->set_content_type('application/json');
-        return $this->output->set_output(json_encode($data));
+        /*$this->output->set_content_type('application/json');
+        return $this->output->set_output(json_encode($data));*/
         /*$this->load->view('header_view');
         $this->load->view('calculate_view');
         $this->load->view('footer_view');*/
-    }   
+    }
+    
+    public function writeExcel() {
+       
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValue('A1', 'Hello World !');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('hello world.xlsx');
+    } 
 }

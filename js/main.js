@@ -1,12 +1,10 @@
 function AppViewModel(loginMenuViewModel) {
     var self = this;
 
-    self.readExcel = function () {
-        console.log(this);
-        console.log($(this).text());
+    self.readExcel = function (passString) {
         $.ajax({
             type: 'POST',
-            url: base_url + 'index.php/Welcome/readExcel/' + $(this).text(),
+            url: base_url + 'index.php/Welcome/readExcel/' + passString,
             contentType: 'application/json; charset=utf-8',
             //data: ko.toJSON({
             //    whole_data : $(this).value

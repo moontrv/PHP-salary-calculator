@@ -18,9 +18,12 @@
         if ($handle = opendir('./uploads/')) {
             while (false !== ($entry = readdir($handle))) {
                 if ($entry != "." && $entry != "..") {
-                    echo "<div class='col-md-6'><button class='btn btn-primary' data-bind='click:readExcel'>$entry</button></div>"
+                    echo "<script>".
+                    "var entry =" .json_encode($entry).
+                    "</script>";
+                    echo "<div class='col-md-6'><span class='btn btn-primary' data-bind='click:readExcel(entry)'>$entry</span></div>"
                          ."<div class='col-md-6'>"
-                         . "<button class='btn btn-danger'>Delete</button>"
+                         . "<span class='btn btn-danger'>Delete</span>"
                          . "</div>";
                 }
             }
