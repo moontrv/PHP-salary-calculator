@@ -5,6 +5,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require 'vendor/autoload.php';     
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Xls;
 
 class Welcome extends CI_Controller {
 
@@ -31,62 +33,88 @@ class Welcome extends CI_Controller {
     }
 
     public function index() {
-        $this->load->view('header_view');
+        $this->load->view('header_view'); 
         $this->load->view('calculate_view');
         $this->load->view('footer_view');
+    }
+    
+    public function getFilesAj(){
+        $dataToView = array();
+        if ($handle = opendir('./uploads/')) {
+            while (false !== ($entry = readdir($handle))) {
+                if ($entry != "." && $entry != "..") {
+                    array_push($dataToView,$entry);
+                }
+            }
+            closedir($handle);
+        }
+        $this->output->set_content_type('application/json');
+        return $this->output->set_output(json_encode($dataToView));
     }
 
     public function do_upload()
     {
         $config['upload_path'] = './uploads/';
-        $config['allowed_types'] = 'xlsx|csv|xls'; //xlsx|csv|xls
+        $config['allowed_types'] = 'xlsx|csv|xls';
         $config['max_size'] = 5000;
         $this->load->library('upload', $config);
         if ( ! $this->upload->do_upload('userfile'))
         {
             $error = array('error' => $this->upload->display_errors());
-
-            $this->load->view('upload_form', $error);
+            print_r($error);
+            $this->load->view('header_view'); 
+            $this->load->view('calculate_view', $error);
+            $this->load->view('footer_view');
         }
         else
         {
             $data = array('upload_data' => $this->upload->data());
-
-            $this->load->view('upload_success', $data);
+            //$this->load->view('upload_success', $data);
+            redirect('/Welcome', 'refresh');
     }
     }
     
-    public function readExcel($data) {
-        //$data = json_decode(file_get_contents('php://input'), true);
-        $data = json_decode(json_encode($data), true);
-        $this->load->library('excel_reader');               
-        // Read the spreadsheet via a relative path to the document
-        // for example $this->excel_reader->read('./uploads/file.xls');
-        $this->excel_reader->read('./uploads/'.$data);
-
-        $worksheet = $this->excel_reader->sheets[0];
-
-        $numRows = $worksheet['numRows']; // ex: 14
-        $numCols = $worksheet['numCols']; // ex: 4
-        $cells = $worksheet['cells']; // the 1st row are usually the field's name
-        foreach ($cells as $cell) {
-            var_dump($cell);
-        }
-
-        /*$this->output->set_content_type('application/json');
-        return $this->output->set_output(json_encode($data));*/
-        /*$this->load->view('header_view');
+    public function deleteFile() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $data = json_decode(json_encode($data['whole_data']), true);
+        
+        $this->load->helper("file");        
+        $t = './uploads/'.$data;
+        unlink($t) or die('failed deleting: ' . $t);
+        
+        $this->load->view('header_view'); 
         $this->load->view('calculate_view');
-        $this->load->view('footer_view');*/
+        $this->load->view('footer_view');
+        
+        $this->output->set_content_type('application/json');
+        return $this->output->set_output(json_encode("Deleted"));        
+    } 
+    
+    public function readExcel($fileName) {     
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+        $spreadsheet = $reader->load('./uploads/'.$fileName);     
+        $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);  
+        
+        return $sheetData;
     }
     
-    public function writeExcel() {
-       
+    public function generateExcel() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $data = json_decode(json_encode($data['whole_data']), true);
+        
+        //Read data from excel to here
+        $readFile = $this->readExcel($data);
+        $savePath = './downloads/'.$data;
+        
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setCellValue('A1', 'Hello World !');
-
+        $sheet->setCellValue('A4', 'Date', 'B4', 'Arrival time', 'C4', 'Leaving time', 'D4', 'No.of hours','E4', 'Normal hours','F4', 'After 21:00');
+        
         $writer = new Xlsx($spreadsheet);
-        $writer->save('hello world.xlsx');
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('./downloads/'.$data);
+        
+        $this->output->set_content_type('application/json');
+        return $this->output->set_output(json_encode($readFile));
     } 
 }
