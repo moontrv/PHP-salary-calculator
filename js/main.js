@@ -73,6 +73,7 @@ function AppViewModel() {
             })
         })
         .done(function (dataReturn) {
+            alert("Generation completed.Please check the downloads folder.");
             console.log(dataReturn);
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
