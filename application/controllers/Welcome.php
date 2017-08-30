@@ -104,11 +104,55 @@ class Welcome extends CI_Controller {
         
         //Read data from excel to here
         $readFile = $this->readExcel($data);
-        $readFile = json_decode(json_encode($readFile, true));
-        foreach($readFile as $readFileRow){
-            print_r(explode(",",$readFileRow));
+        //Remove line Barcode,"Question: Status","Timestamp (Scanned)"
+        array_shift($readFile);
+        
+        $calculated_time = array();
+        $start_time = array();
+        $end_time = array();       
+        for ($i = 0; $i <= count($readFile)-1; $i++) { 
+            $read = explode(",",$readFile[$i]['A']);
+            $date_time = explode(" ",$read[2]);
+            if($i%2==0){
+                array_push($start_time, $date_time);
+            }else{
+                array_push($end_time, $date_time);
+            }            
         }
-        var_dump($readFile);
+        $combine_time_array = array();
+        for ($i = 0; $i <= count($start_time)-1; $i++) {
+            array_push($combine_time_array, array_merge($start_time[$i], $end_time[$i]));
+        }
+        //$combine_time_array has the desired format to be processed
+        /*Array
+        (
+            [0] => Array
+                (
+                    [0] => "2017-08-18
+                    [1] => 11:24:39"
+                    [2] => "2017-08-18
+                    [3] => 11:48:27"
+                )
+
+            [1] => Array
+                (
+                    [0] => "2017-08-19
+                    [1] => 09:00:39"
+                    [2] => "2017-08-19
+                    [3] => 22:00:27"
+                )*/
+        $array_to_excel = array();
+        foreach($combine_time_array as $combine_time_arrayInd){            
+            $date_work = $combine_time_arrayInd[0];
+            $arrivalTime = $combine_time_arrayInd[1];
+            $leavingTime = $combine_time_arrayInd[3];
+            //$a = new DateTime($arrivalTime);
+            //$b = new DateTime($leavingTime);
+            //$workHours = $a->diff($b);
+        }
+        print_r($workHours);
+        print_r($date_work);
+        print_r($combine_time_array);
         die();
         
         $spreadsheet = new Spreadsheet();
